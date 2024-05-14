@@ -32,6 +32,12 @@ def read_json_file(request):
                 # print(f"Primeros 5 elementos de '{key}[{sub_key}]': {sub_dict}")
               print(list_aux)  
             # Devolver los datos leídos como una respuesta JSON
+            data = {
+                  'key1': 'value1',
+                  'key2': 'value2',
+                  'list_key': list_aux
+            }
+
             return JsonResponse(data)
     except FileNotFoundError:
         return JsonResponse({'error': 'Archivo JSON no encontrado'}, status=404)

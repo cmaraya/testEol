@@ -26,10 +26,7 @@ class EventLog(models.Model):
     accept_language = models.ForeignKey(AcceptLanguage, on_delete=models.CASCADE)
     event_source = models.ForeignKey(EventSource, on_delete=models.CASCADE)
     event_type = models.ForeignKey(EventType, on_delete=models.CASCADE)
-    
-    # event_source = models.IntegerField(null=True, blank=True)
-    # event_type = models.IntegerField(null=True, blank=True)
- 
+    # atributes
     path = models.CharField(max_length=255, null=True, blank=True, default="")
     page = models.CharField(max_length=255, null=True, blank=True, default="")
     course_id = models.CharField(max_length=255, null=True, blank=True, default="")
