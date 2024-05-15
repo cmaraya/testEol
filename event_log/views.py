@@ -4,40 +4,45 @@ from django.shortcuts import render
 import json
 from django.http import JsonResponse
 from django.shortcuts import render
+from event_log.models import EventLog
+from datetime import datetime, time 
+from django.db.models import Q
 
-def read_json_file(request):
-    # Ruta al archivo JSON (por ejemplo, dentro del directorio de medios)
-    json_file_path = 'event_log/static/oneday_data.json'
 
-    # Intentar abrir y leer el archivo JSON
-    try:
-        with open(json_file_path, 'r') as json_file:
-            data = json.load(json_file)
+def all_event_logs():
+  event_logs = EventLog.objects.all()
+  return event_logs
 
-            # Obtener las primeras keys del diccionario
-            primeras_keys = list(data.keys())  # Obtener las primeras 2 keys, por ejemplo
+def get_unique_parameters(parameter):
+  unique_parameters = EventLog.objects.values_list(parameter, flat=True).distinct()
+  return unique_parameters
 
-            print("Las primeras keys del JSON son:", primeras_keys)
-            for key in primeras_keys:
-              print(key)
-              # Obtener el valor asociado a la key
-              value = data[key]
-              sub_keys =  list(value.keys())
-              list_aux = []
-              for sub_key in  sub_keys:  # Ordenar keys como enteros y obtener los primeros 5
-                sub_dict = value[sub_key]
-                if key!="context" and key!="username" and  key!="session" and  key!="referer" and  key!="event" and  key!="time" and key!="event_type" and key!="page" and key!="agent":
-                  if sub_dict not in list_aux:      
-                    list_aux.append(sub_dict)
-                # print(f"Primeros 5 elementos de '{key}[{sub_key}]': {sub_dict}")
-              print(list_aux)  
-            # Devolver los datos leídos como una respuesta JSON
-            data = {
-                  'key1': 'value1',
-                  'key2': 'value2',
-                  'list_key': list_aux
-            }
+def get_unique_usernames():
+  return get_unique_parameters('username')
 
-            return JsonResponse(data)
-    except FileNotFoundError:
-        return JsonResponse({'error': 'Archivo JSON no encontrado'}, status=404)
+def get_unique_event_types():
+  return get_unique_parameters('event_type')
+
+def get_unique_event_sources():
+  return get_unique_parameters('event_source')
+
+def get_evet_log_filters(request):
+  start_hour = 17  # request.GET.get('start_hour')
+  start_minute = 5  # request.GET.get('start_minute')
+  end_hour = 18  # request.GET.get('end_hour')
+  end_minute = 10  
+
+  filters = {}
+  if request.usernames:
+      filters['username__in'] = request.usernames
+  if request.event_type:
+      filters['event_type'] = request.event_type
+    # Aplicar los filtros
+  if start_hour is not None and start_minute is not None and end_hour is not None and end_minute is not None:
+    time_range_filter = (
+        Q(timestamp__hour=start_hour, timestamp__minute__gte=start_minute) |
+        Q(timestamp__hour__gt=start_hour, timestamp__hour__lt=end_hour) |
+        Q(timestamp__hour=end_hour, timestamp__minute__lte=end_minute)
+    )
+    filtered_logs = filtered_logs.filter(time_range_filter)
+  return filtered_logs[:request.cantidad]
