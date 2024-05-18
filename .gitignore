@@ -1,0 +1,9 @@
+# Ignorar archivos de compilación
+*.o
+*.out
+
+# Ignorar directorios generados automáticamente
+build/
+dist/
+
+/frontend/node_modules/
