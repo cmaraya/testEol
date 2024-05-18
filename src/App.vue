@@ -219,6 +219,13 @@
         </el-table>
         <el-divider />
         <h3>Gráfico de eventos</h3>
+        <div class="chart-min-height" v-loading="loading" element-loading-text="Cargando gráfico...">
+          <LineChart
+            :chart_data="chart_data"
+            :chart_options="chart_options"
+            :loading="loading"
+          />
+        </div>
       </el-main>
       <el-footer class="basic-style"
         ><h4>Por Catalina Araya Ilabaca</h4></el-footer
@@ -229,9 +236,10 @@
 
 <script>
 import axios from "axios";
-
+import LineChart from "./components/Chart.vue";
 export default {
   name: "App",
+  components: { LineChart },
   data() {
     return {
       loading: true,
@@ -240,15 +248,31 @@ export default {
         username: [],
         source: "",
         type: "",
-        item_to_show: 100,
+        item_to_show: 1000,
       },
       usernameOptions: [],
       eventTypeOptions: [],
       eventSourceOptions: [],
       tableData: [],
+      chart_data: {},
+      chart_options: {
+        responsive: true,
+      },
     };
   },
   methods: {
+    setChartData(labels,total) {
+      const datasets= [
+        {
+          label: "Eventos",
+          backgroundColor: "#009bdd",
+          data: total,
+        },
+      ];
+      let aux_data_chart = {labels:labels,datasets:datasets}      
+      this.chart_data=aux_data_chart
+
+    },
     formatDate(row) {
       const value = row.time;
       const date = new Date(value);
@@ -266,8 +290,8 @@ export default {
         value: element,
       }));
     },
-    obtainUniqueElements(list,name) {
-      return  [...new Set(list.map((obj) => obj[name]))];
+    obtainUniqueElements(list, name) {
+      return [...new Set(list.map((obj) => obj[name]))];
     },
     getUsernames() {
       const params = {
@@ -277,7 +301,7 @@ export default {
         .get("http://127.0.0.1:8000/api/get_unique_usernames", { params })
         .then((res) => {
           let usernames = res.data;
-          let uniqueElements =this.obtainUniqueElements(usernames, 'username')
+          let uniqueElements = this.obtainUniqueElements(usernames, "username");
           this.usernameOptions = this.makeOpcionFormat(uniqueElements);
         })
         .catch(() => {
@@ -292,7 +316,10 @@ export default {
         .get("http://127.0.0.1:8000/api/get_unique_event_types", { params })
         .then((res) => {
           let event_types = res.data;
-          let uniqueElements =this.obtainUniqueElements(event_types, 'event_type')
+          let uniqueElements = this.obtainUniqueElements(
+            event_types,
+            "event_type"
+          );
           this.eventTypeOptions = this.makeOpcionFormat(uniqueElements);
         })
         .catch(() => {
@@ -307,7 +334,10 @@ export default {
         .get("http://127.0.0.1:8000/api/get_unique_event_sources", { params })
         .then((res) => {
           let event_sources = res.data;
-          let uniqueElements =this.obtainUniqueElements(event_sources, 'event_source')
+          let uniqueElements = this.obtainUniqueElements(
+            event_sources,
+            "event_source"
+          );
           this.eventSourceOptions = this.makeOpcionFormat(uniqueElements);
         })
         .catch(() => {
@@ -321,7 +351,8 @@ export default {
       axios
         .get("http://127.0.0.1:8000/api/get_all_event_logs", { params })
         .then((res) => {
-          this.tableData = res.data;
+          this.tableData = res.data.event_logs;
+          this.setChartData(res.data.chart_labels,res.data.chart_total)
           this.loading = false;
         })
         .catch(() => {
@@ -342,13 +373,23 @@ export default {
         .get("http://127.0.0.1:8000/api/get_filter_event_logs", { params })
         .then((res) => {
           this.tableData = res.data.event_logs;
-          this.loading = false;
-          let uniqueElements =this.obtainUniqueElements(res.data.usernames, 'username')
+          let uniqueElements = this.obtainUniqueElements(
+            res.data.usernames,
+            "username"
+          );
           this.usernameOptions = this.makeOpcionFormat(uniqueElements);
-          uniqueElements =this.obtainUniqueElements(res.data.event_types, 'event_type')
+          uniqueElements = this.obtainUniqueElements(
+            res.data.event_types,
+            "event_type"
+          );
           this.eventTypeOptions = this.makeOpcionFormat(uniqueElements);
-          uniqueElements =this.obtainUniqueElements(res.data.event_sources, 'event_source')
+          uniqueElements = this.obtainUniqueElements(
+            res.data.event_sources,
+            "event_source"
+          );
           this.eventSourceOptions = this.makeOpcionFormat(uniqueElements);
+          this.setChartData(res.data.chart_labels,res.data.chart_total)
+          this.loading = false;
         })
         .catch(() => {
           this.loading = false;
@@ -358,7 +399,7 @@ export default {
     resetFilters() {
       // Lógica para limpiar los filtros
       this.$refs.ruleForm.resetFields();
-      this.applyFilters()
+      this.applyFilters();
     },
   },
   mounted() {
@@ -408,5 +449,8 @@ export default {
 }
 .mb-4 {
   margin-bottom: 30px;
+}
+.chart-min-height{
+  min-height: 600px;
 }
 </style>
